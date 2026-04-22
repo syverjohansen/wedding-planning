@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gloria &amp; Syver Wedding Planner</title>
+    <meta
+      name="description"
+      content="Wedding planning dashboard for procurements, schedules, and planning notes."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Rwanda Wedding Planning HQ</p>
+          <h1>Gloria &amp; Syver</h1>
+          <p class="hero-text">
+            Track every purchase, payment, and event timeline across the civil
+            ceremony, welcome reception, gusaba, and wedding.
+          </p>
+          <div class="hero-actions">
+            <button id="export-state" class="button button-primary" type="button">Export planner state</button>
+            <label class="button button-secondary file-button" for="import-state">
+              Import planner state
+            </label>
+            <input id="import-state" type="file" accept="application/json" hidden />
+          </div>
+          <p id="sync-status" class="sync-note">
+            Static site for GitHub Pages. Real-time sync is available after Firebase is configured.
+          </p>
+        </div>
+        <aside class="hero-panel">
+          <div class="hero-panel-card">
+            <span class="panel-label">Reference snapshot</span>
+            <ul class="hero-facts">
+              <li>127 guests currently listed</li>
+              <li>Budget and vendor structure pulled from your spreadsheet and wedding docs</li>
+              <li>Procurements now drive the live budget math</li>
+              <li>Schedules are editable per event day</li>
+            </ul>
+          </div>
+        </aside>
+      </header>
+
+      <main class="main-grid">
+        <section class="overview-grid" id="overview-cards"></section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Procurements</p>
+              <h2>Purchases and payments</h2>
+            </div>
+          </div>
+
+          <form id="procurement-form" class="editor-form">
+            <input id="procurement-id" name="id" type="hidden" />
+            <div class="form-grid form-grid-procurement">
+              <label>
+                <span>Item</span>
+                <input id="proc-item" name="item" type="text" maxlength="120" required />
+              </label>
+              <label>
+                <span>Day / Event</span>
+                <select id="proc-event" name="event"></select>
+              </label>
+              <label>
+                <span>Category</span>
+                <input id="proc-category" name="category" type="text" maxlength="60" placeholder="Venue, decor, DJ..." />
+              </label>
+              <label>
+                <span>Vendor</span>
+                <input id="proc-vendor" name="vendor" type="text" maxlength="80" placeholder="Company or person" />
+              </label>
+              <label>
+                <span>Total price</span>
+                <input id="proc-total" name="totalPrice" type="number" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Amount paid</span>
+                <input id="proc-paid" name="amountPaid" type="number" min="0" step="0.01" required />
+              </label>
+              <label>
+                <span>Status</span>
+                <select id="proc-status" name="status">
+                  <option value="not-started">Not acquired</option>
+                  <option value="in-progress">In progress</option>
+                  <option value="booked">Booked</option>
+                  <option value="paid">Paid in full</option>
+                </select>
+              </label>
+              <label>
+                <span>Currency</span>
+                <select id="proc-currency" name="currency">
+                  <option value="RWF">RWF</option>
+                  <option value="USD">USD</option>
+                </select>
+              </label>
+            </div>
+            <label class="form-notes">
+              <span>Notes</span>
+              <textarea id="proc-notes" name="notes" rows="2" maxlength="280" placeholder="Deposit details, account info, follow-up, or open questions"></textarea>
+            </label>
+            <div class="form-actions">
+              <button class="button button-primary" type="submit">Save procurement</button>
+              <button id="procurement-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
+
+          <div id="procurement-groups" class="stack-grid"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Schedule</p>
+              <h2>Editable event timelines</h2>
+            </div>
+          </div>
+
+          <form id="schedule-form" class="editor-form">
+            <input id="schedule-id" name="id" type="hidden" />
+            <div class="form-grid form-grid-schedule">
+              <label>
+                <span>Day / Event</span>
+                <select id="schedule-event" name="event"></select>
+              </label>
+              <label>
+                <span>Time</span>
+                <input id="schedule-time" name="time" type="text" maxlength="30" placeholder="4:00 PM" required />
+              </label>
+              <label>
+                <span>Activity</span>
+                <input id="schedule-title" name="title" type="text" maxlength="120" required />
+              </label>
+              <label>
+                <span>Location</span>
+                <input id="schedule-location" name="location" type="text" maxlength="120" placeholder="Venue or hotel" />
+              </label>
+              <label>
+                <span>Lead</span>
+                <input id="schedule-owner" name="owner" type="text" maxlength="60" placeholder="Gloria, Syver, planner..." />
+              </label>
+            </div>
+            <label class="form-notes">
+              <span>Notes</span>
+              <textarea id="schedule-notes" name="notes" rows="2" maxlength="280" placeholder="Arrival instructions, dependencies, transportation, vendors, etc."></textarea>
+            </label>
+            <div class="form-actions">
+              <button class="button button-primary" type="submit">Save schedule item</button>
+              <button id="schedule-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+            </div>
+          </form>
+
+          <div id="schedule-groups" class="stack-grid"></div>
+        </section>
+
+        <section class="panel panel-notes">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Notes</p>
+              <h2>Planning context</h2>
+            </div>
+          </div>
+          <div class="notes-grid">
+            <article class="note-card" id="reference-notes"></article>
+            <article class="note-card">
+              <h3>Shared notes</h3>
+              <textarea
+                id="shared-notes"
+                rows="12"
+                placeholder="Capture decisions, open questions, and next steps here."
+              ></textarea>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./firebase-config.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
