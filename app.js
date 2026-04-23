@@ -9,6 +9,60 @@ const EVENT_ORDER = [
   "Wedding",
 ];
 
+const CHECKLIST_TEMPLATE = {
+  "Civil Ceremony": [
+    "Form",
+    "Groom attire",
+    "Bride attire",
+  ],
+  "Welcome Reception": [
+    "Venue",
+    "Food",
+    "Drinks",
+    "Transportation",
+    "Groom Attire",
+    "Bride attire",
+    "Photographer",
+    "Order of events",
+  ],
+  Gusaba: [
+    "Venue",
+    "Decor",
+    "MC",
+    "Dancers",
+    "Cow poets",
+    "Food",
+    "Drinks",
+    "Sound/Lighting",
+    "Service team",
+    "Hair/makeup",
+    "Mishanana",
+    "Gifts",
+    "Transportation",
+    "Order of events",
+  ],
+  Wedding: [
+    "Venue",
+    "Decor",
+    "MC",
+    "Food",
+    "Drinks",
+    "Service team",
+    "Cake",
+    "DJ",
+    "Violin",
+    "Sound/Lighting",
+    "Transportation",
+    "Printing",
+    "Bouquet/Flowers",
+    "Groom attire",
+    "Bride attire",
+    "Misc supplies",
+  ],
+};
+
+const CHECKLIST_STATUS_OPTIONS = ["None", "Inquired", "Partial", "Full"];
+
 const SEED_PROCUREMENTS = [
   {
     id: "proc-civil-filing",
@@ -245,7 +299,44 @@ function normalizeProcurements(items) {
     currency: item.currency === "USD" ? "USD" : "RWF",
     status: String(item.status || "not-started"),
     notes: String(item.notes || "").trim(),
+    attachments: Array.isArray(item.attachments)
+      ? item.attachments.map((attachment) => ({
+          name: String(attachment.name || "Attachment"),
+          url: String(attachment.url || ""),
+          path: String(attachment.path || ""),
+          size: Number(attachment.size || 0),
+          contentType: String(attachment.contentType || ""),
+          uploadedAt: String(attachment.uploadedAt || ""),
+        })).filter((attachment) => attachment.url)
+      : [],
   })).filter((item) => item.item);
+}
+
+function checklistKey(eventName, itemName) {
+  return `${eventName}::${itemName}`;
+}
+
+function defaultChecklist() {
+  const checklist = {};
+  Object.entries(CHECKLIST_TEMPLATE).forEach(([eventName, items]) => {
+    items.forEach((itemName) => {
+      checklist[checklistKey(eventName, itemName)] = "None";
+    });
+  });
+  return checklist;
+}
+
+function normalizeChecklist(source) {
+  const baseline = defaultChecklist();
+  if (!source || typeof source !== "object") return baseline;
+
+  Object.keys(baseline).forEach((key) => {
+    if (CHECKLIST_STATUS_OPTIONS.includes(source[key])) {
+      baseline[key] = source[key];
+    }
+  });
+
+  return baseline;
 }
 
 function normalizeSchedules(items) {
@@ -262,6 +353,7 @@ function normalizeSchedules(items) {
 
 function migrateState(parsed) {
   return {
+    checklist: normalizeChecklist(parsed.checklist),
     procurements: normalizeProcurements(parsed.procurements).length
       ? normalizeProcurements(parsed.procurements)
       : cloneSeed(SEED_PROCUREMENTS),
@@ -274,6 +366,7 @@ function migrateState(parsed) {
 
 function defaultState() {
   return {
+    checklist: defaultChecklist(),
     procurements: cloneSeed(SEED_PROCUREMENTS),
     schedules: cloneSeed(SEED_SCHEDULE),
     sharedNotes: "",
@@ -297,6 +390,8 @@ function loadLocalState() {
 const state = loadLocalState();
 let remoteStore = null;
 let suppressRemoteSave = false;
+let attachmentService = null;
+const uploadState = {};
 
 function persistLocalState() {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -327,6 +422,7 @@ async function createRemoteStore() {
   try {
     const appModule = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
     const firestoreModule = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const storageModule = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-storage.js`);
     const { initializeApp } = appModule;
     const {
       doc,
@@ -336,12 +432,42 @@ async function createRemoteStore() {
       serverTimestamp,
       setDoc,
     } = firestoreModule;
+    const {
+      deleteObject,
+      getDownloadURL,
+      getStorage,
+      ref,
+      uploadBytes,
+    } = storageModule;
 
     const app = initializeApp(config);
     const db = getFirestore(app);
+    const storage = getStorage(app);
     const path = (window.WEDDING_SYNC_OPTIONS && window.WEDDING_SYNC_OPTIONS.documentPath) || "wedding-planning/main";
     const [collectionName, documentName] = path.split("/");
     const documentRef = doc(db, collectionName, documentName || "main");
+
+    attachmentService = {
+      async upload(procurementId, file) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+        const storagePath = `procurements/${procurementId}/${Date.now()}-${safeName}`;
+        const storageRef = ref(storage, storagePath);
+        await uploadBytes(storageRef, file, { contentType: file.type || "application/octet-stream" });
+        const url = await getDownloadURL(storageRef);
+        return {
+          name: file.name,
+          url,
+          path: storagePath,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+          uploadedAt: new Date().toISOString(),
+        };
+      },
+      async remove(pathToDelete) {
+        const storageRef = ref(storage, pathToDelete);
+        await deleteObject(storageRef);
+      },
+    };
 
     return {
       async hydrateLocalState(localState) {
@@ -387,6 +513,7 @@ async function createRemoteStore() {
 }
 
 function applyIncomingState(nextState) {
+  state.checklist = normalizeChecklist(nextState.checklist);
   state.procurements = normalizeProcurements(nextState.procurements).length
     ? normalizeProcurements(nextState.procurements)
     : cloneSeed(SEED_PROCUREMENTS);
@@ -455,6 +582,59 @@ function summarizeEventTotals(items) {
   if (totals.rwf) parts.push(formatMoney(totals.rwf, "RWF"));
   if (totals.usd) parts.push(formatMoney(totals.usd, "USD"));
   return parts.join(" + ") || "No budget yet";
+}
+
+function formatFileSize(size) {
+  if (!size) return "";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderChecklist() {
+  const container = document.querySelector("#checklist-groups");
+  container.innerHTML = "";
+
+  EVENT_ORDER.forEach((eventName) => {
+    const card = createEl("section", "checklist-card");
+    const header = createEl("div", "event-group-header");
+    const titleWrap = createEl("div");
+    titleWrap.appendChild(createEl("div", "section-kicker", eventName));
+    titleWrap.appendChild(createEl("h3", "", eventName));
+    header.appendChild(titleWrap);
+
+    const fullCount = CHECKLIST_TEMPLATE[eventName].filter(
+      (itemName) => state.checklist[checklistKey(eventName, itemName)] === "Full"
+    ).length;
+    header.appendChild(createEl("div", "group-meta", `${fullCount}/${CHECKLIST_TEMPLATE[eventName].length} full`));
+    card.appendChild(header);
+
+    const grid = createEl("div", "checklist-grid");
+    CHECKLIST_TEMPLATE[eventName].forEach((itemName) => {
+      const row = createEl("div", "checklist-row");
+      row.appendChild(createEl("div", "checklist-item", itemName));
+
+      const select = createEl("select", "checklist-select");
+      CHECKLIST_STATUS_OPTIONS.forEach((optionValue) => {
+        const option = new Option(optionValue, optionValue);
+        if (state.checklist[checklistKey(eventName, itemName)] === optionValue) {
+          option.selected = true;
+        }
+        select.add(option);
+      });
+      select.addEventListener("change", async (event) => {
+        state.checklist[checklistKey(eventName, itemName)] = event.target.value;
+        await persistEverywhere();
+        renderChecklist();
+      });
+
+      row.appendChild(select);
+      grid.appendChild(row);
+    });
+
+    card.appendChild(grid);
+    container.appendChild(card);
+  });
 }
 
 function renderOverview() {
@@ -559,7 +739,60 @@ function renderProcurements() {
       tags.appendChild(createTag("money-tag", `Left ${formatMoney(remainingAmount(item), item.currency)}`));
       main.appendChild(tags);
 
-      if (item.notes) main.appendChild(createEl("p", "record-note", item.notes));
+      if (item.notes) main.appendChild(renderNoteBlock(item.notes));
+
+      const attachmentsWrap = createEl("div", "attachments-wrap");
+      const uploadRow = createEl("div", "upload-row");
+      const uploadLabel = createEl("label", "button button-secondary file-button", "Upload receipt / invoice");
+      const uploadInput = document.createElement("input");
+      uploadInput.type = "file";
+      uploadInput.hidden = true;
+      uploadInput.accept = ".pdf,.png,.jpg,.jpeg,.webp,.heic,.doc,.docx,.xls,.xlsx";
+      uploadInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await uploadAttachment(item.id, file);
+        event.target.value = "";
+      });
+      uploadLabel.appendChild(uploadInput);
+      uploadRow.appendChild(uploadLabel);
+      if (uploadState[item.id]) {
+        uploadRow.appendChild(createEl("div", "upload-status", uploadState[item.id]));
+      }
+      attachmentsWrap.appendChild(uploadRow);
+
+      if (item.attachments.length) {
+        const attachmentList = createEl("ul", "attachment-list");
+        item.attachments.forEach((attachment) => {
+          const attachmentItem = createEl("li", "attachment-item");
+          const attachmentMeta = createEl("div", "attachment-meta");
+          const link = createEl("a", "attachment-name", attachment.name);
+          link.href = attachment.url;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          attachmentMeta.appendChild(link);
+
+          const bits = [];
+          if (attachment.uploadedAt) bits.push(new Date(attachment.uploadedAt).toLocaleString());
+          if (attachment.size) bits.push(formatFileSize(attachment.size));
+          if (attachment.contentType) bits.push(attachment.contentType);
+          if (bits.length) {
+            attachmentMeta.appendChild(createEl("div", "attachment-sub", bits.join(" · ")));
+          }
+          attachmentItem.appendChild(attachmentMeta);
+
+          const removeButton = createEl("button", "ghost-button", "Remove");
+          removeButton.type = "button";
+          removeButton.addEventListener("click", async () => {
+            await removeAttachment(item.id, attachment.path);
+          });
+          attachmentItem.appendChild(removeButton);
+          attachmentList.appendChild(attachmentItem);
+        });
+        attachmentsWrap.appendChild(attachmentList);
+      }
+
+      main.appendChild(attachmentsWrap);
       card.appendChild(main);
 
       const actions = createEl("div", "card-actions");
@@ -615,7 +848,7 @@ function renderSchedules() {
       if (item.location) meta.push(item.location);
       if (item.owner) meta.push(`Lead: ${item.owner}`);
       if (meta.length) main.appendChild(createEl("p", "record-subtitle", meta.join(" · ")));
-      if (item.notes) main.appendChild(createEl("p", "record-note", item.notes));
+      if (item.notes) main.appendChild(renderNoteBlock(item.notes));
       card.appendChild(main);
 
       const actions = createEl("div", "card-actions");
@@ -644,6 +877,23 @@ function renderReferenceNotes() {
   const list = createEl("ul");
   REFERENCE_NOTES.forEach((item) => list.appendChild(createEl("li", "", item)));
   container.appendChild(list);
+}
+
+function renderNoteBlock(text) {
+  const wrapper = createEl("div", "record-note");
+  if (text.length <= 220) {
+    wrapper.textContent = text;
+    return wrapper;
+  }
+
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  summary.textContent = `${text.slice(0, 180)}...`;
+  const body = createEl("div", "", text);
+  details.appendChild(summary);
+  details.appendChild(body);
+  wrapper.appendChild(details);
+  return wrapper;
 }
 
 function resetProcurementForm() {
@@ -708,11 +958,13 @@ async function saveProcurement(event) {
     status: String(formData.get("status") || "not-started"),
     currency: String(formData.get("currency") || "RWF"),
     notes: String(formData.get("notes") || "").trim(),
+    attachments: [],
   };
   if (!item.item) return;
   if (item.amountPaid > item.totalPrice) item.amountPaid = item.totalPrice;
 
   const index = state.procurements.findIndex((entry) => entry.id === item.id);
+  if (index >= 0) item.attachments = state.procurements[index].attachments || [];
   if (index >= 0) state.procurements[index] = item;
   else state.procurements.push(item);
 
@@ -791,7 +1043,52 @@ async function handleNotes(event) {
   await persistEverywhere();
 }
 
+async function uploadAttachment(procurementId, file) {
+  if (!attachmentService) {
+    window.alert("Uploads need Firebase Storage. If this keeps failing, enable Storage in Firebase.");
+    return;
+  }
+
+  uploadState[procurementId] = `Uploading ${file.name}...`;
+  renderProcurements();
+
+  try {
+    const uploaded = await attachmentService.upload(procurementId, file);
+    const item = state.procurements.find((entry) => entry.id === procurementId);
+    if (!item) return;
+    item.attachments = [...(item.attachments || []), uploaded];
+    delete uploadState[procurementId];
+    await persistEverywhere();
+    renderProcurements();
+  } catch (error) {
+    console.warn("Attachment upload failed", error);
+    uploadState[procurementId] = "Upload failed. Check Firebase Storage setup and rules.";
+    renderProcurements();
+  }
+}
+
+async function removeAttachment(procurementId, attachmentPath) {
+  const item = state.procurements.find((entry) => entry.id === procurementId);
+  if (!item) return;
+
+  const attachment = (item.attachments || []).find((entry) => entry.path === attachmentPath);
+  if (!attachment) return;
+
+  try {
+    if (attachmentService && attachment.path) {
+      await attachmentService.remove(attachment.path);
+    }
+  } catch (error) {
+    console.warn("Attachment delete failed", error);
+  }
+
+  item.attachments = (item.attachments || []).filter((entry) => entry.path !== attachmentPath);
+  await persistEverywhere();
+  renderProcurements();
+}
+
 function renderAll() {
+  renderChecklist();
   renderOverview();
   renderProcurements();
   renderSchedules();
@@ -808,6 +1105,7 @@ async function initRealtimeSync() {
   remoteStore.subscribe((incomingState) => {
     const incomingJson = JSON.stringify(incomingState);
     const currentJson = JSON.stringify({
+      checklist: state.checklist,
       procurements: state.procurements,
       schedules: state.schedules,
       sharedNotes: state.sharedNotes,

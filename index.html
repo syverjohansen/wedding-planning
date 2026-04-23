@@ -51,6 +51,16 @@
       </header>
 
       <main class="main-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">Status Checklist</p>
+              <h2>Current planning status</h2>
+            </div>
+          </div>
+          <div id="checklist-groups" class="stack-grid"></div>
+        </section>
+
         <section class="overview-grid" id="overview-cards"></section>
 
         <section class="panel">
@@ -107,7 +117,7 @@
             </div>
             <label class="form-notes">
               <span>Notes</span>
-              <textarea id="proc-notes" name="notes" rows="2" maxlength="280" placeholder="Deposit details, account info, follow-up, or open questions"></textarea>
+              <textarea id="proc-notes" name="notes" rows="5" placeholder="Deposit details, account info, follow-up, or open questions"></textarea>
             </label>
             <div class="form-actions">
               <button class="button button-primary" type="submit">Save procurement</button>
@@ -152,7 +162,7 @@
             </div>
             <label class="form-notes">
               <span>Notes</span>
-              <textarea id="schedule-notes" name="notes" rows="2" maxlength="280" placeholder="Arrival instructions, dependencies, transportation, vendors, etc."></textarea>
+              <textarea id="schedule-notes" name="notes" rows="5" placeholder="Arrival instructions, dependencies, transportation, vendors, etc."></textarea>
             </label>
             <div class="form-actions">
               <button class="button button-primary" type="submit">Save schedule item</button>
