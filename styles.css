@@ -177,6 +177,40 @@ li {
   margin-top: 24px;
 }
 
+.page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.page-tab {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.9);
+  color: var(--ink);
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.page-tab.is-active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fffaf8;
+  border-color: transparent;
+}
+
+.page-view {
+  display: none;
+  gap: 24px;
+}
+
+.page-view.is-active {
+  display: grid;
+}
+
 .overview-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -226,6 +260,14 @@ li {
 
 .form-grid-schedule {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.form-grid-communications {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.form-grid-operations {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .editor-form label {
@@ -428,6 +470,23 @@ li {
   padding: 10px 12px;
 }
 
+.checklist-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  border-top: 1px solid rgba(54, 38, 23, 0.08);
+}
+
+.checklist-add-row input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  padding: 10px 12px;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -478,7 +537,9 @@ li {
 
   .overview-grid,
   .form-grid-procurement,
-  .form-grid-schedule {
+  .form-grid-schedule,
+  .form-grid-communications,
+  .form-grid-operations {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -497,6 +558,8 @@ li {
   .overview-grid,
   .form-grid-procurement,
   .form-grid-schedule,
+  .form-grid-communications,
+  .form-grid-operations,
   .notes-grid,
   .record-card {
     grid-template-columns: 1fr;
@@ -509,7 +572,8 @@ li {
   }
 
   .checklist-row,
-  .attachment-item {
+  .attachment-item,
+  .checklist-add-row {
     grid-template-columns: 1fr;
   }
 }

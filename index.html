@@ -50,147 +50,256 @@
         </aside>
       </header>
 
+      <nav class="page-nav" aria-label="Planner sections">
+        <button class="page-tab is-active" data-page-target="checklist" type="button">Checklist</button>
+        <button class="page-tab" data-page-target="communications" type="button">Communications</button>
+        <button class="page-tab" data-page-target="operations" type="button">Operations</button>
+        <button class="page-tab" data-page-target="supply" type="button">Supply</button>
+        <button class="page-tab" data-page-target="logistics" type="button">Logistics</button>
+      </nav>
+
       <main class="main-grid">
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Status Checklist</p>
-              <h2>Current planning status</h2>
+        <section class="page-view is-active" data-page="checklist">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Status Checklist</p>
+                <h2>Current planning status</h2>
+              </div>
             </div>
-          </div>
-          <div id="checklist-groups" class="stack-grid"></div>
+            <div id="checklist-groups" class="stack-grid"></div>
+          </section>
         </section>
 
-        <section class="overview-grid" id="overview-cards"></section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Procurements</p>
-              <h2>Purchases and payments</h2>
+        <section class="page-view" data-page="communications">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Communications</p>
+                <h2>Things to send to guests</h2>
+              </div>
             </div>
-          </div>
-
-          <form id="procurement-form" class="editor-form">
-            <input id="procurement-id" name="id" type="hidden" />
-            <div class="form-grid form-grid-procurement">
-              <label>
-                <span>Item</span>
-                <input id="proc-item" name="item" type="text" maxlength="120" required />
+            <form id="communications-form" class="editor-form">
+              <input id="communications-id" name="id" type="hidden" />
+              <div class="form-grid form-grid-communications">
+                <label>
+                  <span>Send by</span>
+                  <input id="comm-date" name="date" type="date" required />
+                </label>
+                <label>
+                  <span>Message / deliverable</span>
+                  <input id="comm-title" name="title" type="text" maxlength="160" required />
+                </label>
+                <label>
+                  <span>Audience</span>
+                  <input id="comm-audience" name="audience" type="text" maxlength="100" placeholder="All guests, international guests..." />
+                </label>
+                <label>
+                  <span>Channel</span>
+                  <input id="comm-channel" name="channel" type="text" maxlength="80" placeholder="Email, WhatsApp, printed insert..." />
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select id="comm-status" name="status">
+                    <option value="drafting">Drafting</option>
+                    <option value="ready">Ready</option>
+                    <option value="sent">Sent</option>
+                  </select>
+                </label>
+              </div>
+              <label class="form-notes">
+                <span>Notes</span>
+                <textarea id="comm-notes" name="notes" rows="5" placeholder="Links, dependencies, exact guest segment, attachments to prepare, etc."></textarea>
               </label>
-              <label>
-                <span>Day / Event</span>
-                <select id="proc-event" name="event"></select>
-              </label>
-              <label>
-                <span>Category</span>
-                <input id="proc-category" name="category" type="text" maxlength="60" placeholder="Venue, decor, DJ..." />
-              </label>
-              <label>
-                <span>Vendor</span>
-                <input id="proc-vendor" name="vendor" type="text" maxlength="80" placeholder="Company or person" />
-              </label>
-              <label>
-                <span>Total price</span>
-                <input id="proc-total" name="totalPrice" type="number" min="0" step="0.01" required />
-              </label>
-              <label>
-                <span>Amount paid</span>
-                <input id="proc-paid" name="amountPaid" type="number" min="0" step="0.01" required />
-              </label>
-              <label>
-                <span>Status</span>
-                <select id="proc-status" name="status">
-                  <option value="not-started">Not acquired</option>
-                  <option value="in-progress">In progress</option>
-                  <option value="booked">Booked</option>
-                  <option value="paid">Paid in full</option>
-                </select>
-              </label>
-              <label>
-                <span>Currency</span>
-                <select id="proc-currency" name="currency">
-                  <option value="RWF">RWF</option>
-                  <option value="USD">USD</option>
-                </select>
-              </label>
-            </div>
-            <label class="form-notes">
-              <span>Notes</span>
-              <textarea id="proc-notes" name="notes" rows="5" placeholder="Deposit details, account info, follow-up, or open questions"></textarea>
-            </label>
-            <div class="form-actions">
-              <button class="button button-primary" type="submit">Save procurement</button>
-              <button id="procurement-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
-            </div>
-          </form>
-
-          <div id="procurement-groups" class="stack-grid"></div>
+              <div class="form-actions">
+                <button class="button button-primary" type="submit">Save communication</button>
+                <button id="communications-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+              </div>
+            </form>
+            <div id="communications-list" class="stack-grid"></div>
+          </section>
         </section>
 
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Schedule</p>
-              <h2>Editable event timelines</h2>
+        <section class="page-view" data-page="operations">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Operations</p>
+                <h2>Things we need to get done</h2>
+              </div>
             </div>
-          </div>
-
-          <form id="schedule-form" class="editor-form">
-            <input id="schedule-id" name="id" type="hidden" />
-            <div class="form-grid form-grid-schedule">
-              <label>
-                <span>Day / Event</span>
-                <select id="schedule-event" name="event"></select>
+            <form id="operations-form" class="editor-form">
+              <input id="operations-id" name="id" type="hidden" />
+              <div class="form-grid form-grid-operations">
+                <label>
+                  <span>Task</span>
+                  <input id="op-title" name="title" type="text" maxlength="160" required />
+                </label>
+                <label>
+                  <span>Due date</span>
+                  <input id="op-due-date" name="dueDate" type="date" />
+                </label>
+                <label>
+                  <span>Owner</span>
+                  <input id="op-owner" name="owner" type="text" maxlength="80" placeholder="Gloria, Syver, planner..." />
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select id="op-status" name="status">
+                    <option value="not-started">Not started</option>
+                    <option value="in-progress">In progress</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="done">Done</option>
+                  </select>
+                </label>
+              </div>
+              <label class="form-notes">
+                <span>Notes</span>
+                <textarea id="op-notes" name="notes" rows="5" placeholder="Dependencies, vendor callbacks, open questions, or reminders"></textarea>
               </label>
-              <label>
-                <span>Time</span>
-                <input id="schedule-time" name="time" type="text" maxlength="30" placeholder="4:00 PM" required />
-              </label>
-              <label>
-                <span>Activity</span>
-                <input id="schedule-title" name="title" type="text" maxlength="120" required />
-              </label>
-              <label>
-                <span>Location</span>
-                <input id="schedule-location" name="location" type="text" maxlength="120" placeholder="Venue or hotel" />
-              </label>
-              <label>
-                <span>Lead</span>
-                <input id="schedule-owner" name="owner" type="text" maxlength="60" placeholder="Gloria, Syver, planner..." />
-              </label>
-            </div>
-            <label class="form-notes">
-              <span>Notes</span>
-              <textarea id="schedule-notes" name="notes" rows="5" placeholder="Arrival instructions, dependencies, transportation, vendors, etc."></textarea>
-            </label>
-            <div class="form-actions">
-              <button class="button button-primary" type="submit">Save schedule item</button>
-              <button id="schedule-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
-            </div>
-          </form>
-
-          <div id="schedule-groups" class="stack-grid"></div>
+              <div class="form-actions">
+                <button class="button button-primary" type="submit">Save operation</button>
+                <button id="operations-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+              </div>
+            </form>
+            <div id="operations-list" class="stack-grid"></div>
+          </section>
         </section>
 
-        <section class="panel panel-notes">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Notes</p>
-              <h2>Planning context</h2>
+        <section class="page-view" data-page="supply">
+          <section class="overview-grid" id="overview-cards"></section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Supply</p>
+                <h2>Procurements and payments</h2>
+              </div>
             </div>
-          </div>
-          <div class="notes-grid">
-            <article class="note-card" id="reference-notes"></article>
-            <article class="note-card">
-              <h3>Shared notes</h3>
-              <textarea
-                id="shared-notes"
-                rows="12"
-                placeholder="Capture decisions, open questions, and next steps here."
-              ></textarea>
-            </article>
-          </div>
+
+            <form id="procurement-form" class="editor-form">
+              <input id="procurement-id" name="id" type="hidden" />
+              <div class="form-grid form-grid-procurement">
+                <label>
+                  <span>Item</span>
+                  <input id="proc-item" name="item" type="text" maxlength="120" required />
+                </label>
+                <label>
+                  <span>Day / Event</span>
+                  <select id="proc-event" name="event"></select>
+                </label>
+                <label>
+                  <span>Category</span>
+                  <input id="proc-category" name="category" type="text" maxlength="60" placeholder="Venue, decor, DJ..." />
+                </label>
+                <label>
+                  <span>Vendor</span>
+                  <input id="proc-vendor" name="vendor" type="text" maxlength="80" placeholder="Company or person" />
+                </label>
+                <label>
+                  <span>Total price</span>
+                  <input id="proc-total" name="totalPrice" type="number" min="0" step="0.01" required />
+                </label>
+                <label>
+                  <span>Amount paid</span>
+                  <input id="proc-paid" name="amountPaid" type="number" min="0" step="0.01" required />
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select id="proc-status" name="status">
+                    <option value="not-started">Not acquired</option>
+                    <option value="in-progress">In progress</option>
+                    <option value="booked">Booked</option>
+                    <option value="paid">Paid in full</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Currency</span>
+                  <select id="proc-currency" name="currency">
+                    <option value="RWF">RWF</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </label>
+              </div>
+              <label class="form-notes">
+                <span>Notes</span>
+                <textarea id="proc-notes" name="notes" rows="5" placeholder="Deposit details, account info, follow-up, or open questions"></textarea>
+              </label>
+              <div class="form-actions">
+                <button class="button button-primary" type="submit">Save procurement</button>
+                <button id="procurement-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+              </div>
+            </form>
+
+            <div id="procurement-groups" class="stack-grid"></div>
+          </section>
+        </section>
+
+        <section class="page-view" data-page="logistics">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Logistics</p>
+                <h2>How the events happen over the days</h2>
+              </div>
+            </div>
+
+            <form id="schedule-form" class="editor-form">
+              <input id="schedule-id" name="id" type="hidden" />
+              <div class="form-grid form-grid-schedule">
+                <label>
+                  <span>Day / Event</span>
+                  <select id="schedule-event" name="event"></select>
+                </label>
+                <label>
+                  <span>Time</span>
+                  <input id="schedule-time" name="time" type="text" maxlength="30" placeholder="4:00 PM" required />
+                </label>
+                <label>
+                  <span>Activity</span>
+                  <input id="schedule-title" name="title" type="text" maxlength="120" required />
+                </label>
+                <label>
+                  <span>Location</span>
+                  <input id="schedule-location" name="location" type="text" maxlength="120" placeholder="Venue or hotel" />
+                </label>
+                <label>
+                  <span>Lead</span>
+                  <input id="schedule-owner" name="owner" type="text" maxlength="60" placeholder="Gloria, Syver, planner..." />
+                </label>
+              </div>
+              <label class="form-notes">
+                <span>Notes</span>
+                <textarea id="schedule-notes" name="notes" rows="5" placeholder="Arrival instructions, dependencies, transportation, vendors, etc."></textarea>
+              </label>
+              <div class="form-actions">
+                <button class="button button-primary" type="submit">Save logistics item</button>
+                <button id="schedule-cancel" class="button button-secondary" type="button" hidden>Cancel edit</button>
+              </div>
+            </form>
+
+            <div id="schedule-groups" class="stack-grid"></div>
+          </section>
+
+          <section class="panel panel-notes">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Notes</p>
+                <h2>Planning context</h2>
+              </div>
+            </div>
+            <div class="notes-grid">
+              <article class="note-card" id="reference-notes"></article>
+              <article class="note-card">
+                <h3>Shared notes</h3>
+                <textarea
+                  id="shared-notes"
+                  rows="12"
+                  placeholder="Capture decisions, open questions, and next steps here."
+                ></textarea>
+              </article>
+            </div>
+          </section>
         </section>
       </main>
     </div>
